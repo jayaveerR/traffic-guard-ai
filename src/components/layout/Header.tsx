@@ -9,7 +9,7 @@ const navItems = [
   { label: "Dataset", path: "/dataset" },
   { label: "Prediction", path: "/prediction" },
   { label: "Dashboard", path: "/dashboard" },
-  { label: "About Project", path: "/about" },
+  { label: "About", path: "/about" },
 ];
 
 export function Header() {
