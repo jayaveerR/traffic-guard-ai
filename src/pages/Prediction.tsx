@@ -21,6 +21,7 @@ import { Brain, CalendarIcon, Clock, AlertTriangle, Shield, TrendingUp, MapPin, 
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { simulatePrediction, LocationData } from "@/lib/dummy-data";
+import { usePrediction } from "@/context/PredictionContext";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const timeSlots = [
@@ -48,6 +49,8 @@ export default function Prediction() {
     factors: string[];
   } | null>(null);
 
+  const { setLatestPrediction } = usePrediction();
+
   const handlePredict = async () => {
     if (!date || !time || !selectedLocation) return;
 
@@ -59,6 +62,14 @@ export default function Prediction() {
 
     const result = simulatePrediction(format(date, "yyyy-MM-dd"), time, selectedLocation.id);
     setPrediction(result);
+    
+    // Save to context for Dashboard
+    setLatestPrediction({
+      ...result,
+      date: format(date, "yyyy-MM-dd"),
+      time,
+    });
+    
     setIsLoading(false);
   };
 

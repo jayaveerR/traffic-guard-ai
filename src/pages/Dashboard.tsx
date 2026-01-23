@@ -7,6 +7,8 @@ import {
   TrendingUp,
   Target,
   BarChart3,
+  MapPin,
+  Calendar,
 } from "lucide-react";
 import {
   hourlyAccidentData,
@@ -14,6 +16,7 @@ import {
   peakHourTrendData,
   highRiskTimeSlots,
 } from "@/lib/dummy-data";
+import { usePrediction } from "@/context/PredictionContext";
 import {
   BarChart,
   Bar,
@@ -28,6 +31,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { cn } from "@/lib/utils";
 
 const chartTooltipStyle = {
   backgroundColor: "hsl(var(--card))",
@@ -36,6 +40,22 @@ const chartTooltipStyle = {
 };
 
 export default function Dashboard() {
+  const { latestPrediction, predictionHistory } = usePrediction();
+
+  // Calculate stats based on latest prediction or defaults
+  const totalAccidents = latestPrediction 
+    ? latestPrediction.predictedCount 
+    : 1823;
+  
+  const highRiskHours = latestPrediction?.riskLevel === "high" 
+    ? 4 
+    : latestPrediction?.riskLevel === "medium" 
+      ? 2 
+      : 1;
+  
+  const peakTime = latestPrediction?.time || "5:30 PM";
+  const accuracy = latestPrediction?.confidence || 91.2;
+
   return (
     <div className="py-8 md:py-12">
       <div className="container">
@@ -48,45 +68,130 @@ export default function Dashboard() {
             <div>
               <h1 className="text-3xl font-bold font-display">Analytics Dashboard</h1>
               <p className="text-muted-foreground">
-                Real-time traffic accident insights and predictions
+                {latestPrediction 
+                  ? `Showing prediction for ${latestPrediction.location?.name || "selected location"}`
+                  : "Real-time traffic accident insights and predictions"}
               </p>
             </div>
           </div>
         </div>
 
+        {/* Latest Prediction Banner */}
+        {latestPrediction && (
+          <Card className={cn(
+            "mb-6 shadow-card border-l-4 animate-fade-in",
+            {
+              "border-l-success bg-success/5": latestPrediction.riskLevel === "low",
+              "border-l-warning bg-warning/5": latestPrediction.riskLevel === "medium",
+              "border-l-danger bg-danger/5": latestPrediction.riskLevel === "high",
+            }
+          )}>
+            <CardContent className="pt-6">
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "h-12 w-12 rounded-lg flex items-center justify-center",
+                    {
+                      "bg-success/10": latestPrediction.riskLevel === "low",
+                      "bg-warning/10": latestPrediction.riskLevel === "medium",
+                      "bg-danger/10": latestPrediction.riskLevel === "high",
+                    }
+                  )}>
+                    <MapPin className={cn("h-6 w-6", {
+                      "text-success": latestPrediction.riskLevel === "low",
+                      "text-warning": latestPrediction.riskLevel === "medium",
+                      "text-danger": latestPrediction.riskLevel === "high",
+                    })} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Latest Prediction</p>
+                    <p className="font-semibold text-foreground">
+                      {latestPrediction.location?.name || "Custom Location"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{latestPrediction.date}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{latestPrediction.time}</span>
+                </div>
+                <RiskBadge level={latestPrediction.riskLevel} />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
-            title="Total Accidents (YTD)"
-            value="1,823"
-            subtitle="This year"
+            title={latestPrediction ? "Predicted Accidents" : "Total Accidents (YTD)"}
+            value={totalAccidents.toLocaleString()}
+            subtitle={latestPrediction ? `For ${latestPrediction.location?.name || "location"}` : "This year"}
             icon={AlertTriangle}
-            trend={{ value: 12, positive: false }}
-            variant="danger"
+            trend={latestPrediction ? undefined : { value: 12, positive: false }}
+            variant={latestPrediction?.riskLevel === "high" ? "danger" : latestPrediction?.riskLevel === "medium" ? "warning" : "danger"}
           />
           <StatCard
             title="High Risk Hours"
-            value="4"
-            subtitle="Identified daily"
+            value={highRiskHours.toString()}
+            subtitle={latestPrediction ? "Based on prediction" : "Identified daily"}
             icon={Clock}
             variant="warning"
           />
           <StatCard
             title="Peak Accident Time"
-            value="5:30 PM"
-            subtitle="Evening rush"
+            value={peakTime}
+            subtitle={latestPrediction ? "Selected time" : "Evening rush"}
             icon={TrendingUp}
             variant="default"
           />
           <StatCard
             title="Prediction Accuracy"
-            value="91.2%"
+            value={`${accuracy}%`}
             subtitle="Model performance"
             icon={Target}
-            trend={{ value: 3.2, positive: true }}
+            trend={latestPrediction ? undefined : { value: 3.2, positive: true }}
             variant="success"
           />
         </div>
+
+        {/* Prediction History */}
+        {predictionHistory.length > 1 && (
+          <Card className="shadow-card mb-8">
+            <CardHeader>
+              <CardTitle className="text-lg">Recent Predictions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {predictionHistory.slice(0, 5).map((pred, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border"
+                  >
+                    <div className="flex items-center gap-3">
+                      <MapPin className={cn("h-4 w-4", {
+                        "text-success": pred.riskLevel === "low",
+                        "text-warning": pred.riskLevel === "medium",
+                        "text-danger": pred.riskLevel === "high",
+                      })} />
+                      <div>
+                        <p className="font-medium text-sm">{pred.location?.name || "Custom Location"}</p>
+                        <p className="text-xs text-muted-foreground">{pred.date} at {pred.time}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold">{pred.predictedCount} accidents</span>
+                      <RiskBadge level={pred.riskLevel} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Charts Grid */}
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
