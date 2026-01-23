@@ -17,14 +17,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronLeft, ChevronRight, Database } from "lucide-react";
-import { accidentDataset, AccidentRecord } from "@/lib/dummy-data";
+import { Search, ChevronLeft, ChevronRight, Database, MapPin } from "lucide-react";
+import { accidentDataset, AccidentRecord, locations } from "@/lib/dummy-data";
+import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 8;
+
+// Get unique locations from dataset
+const datasetLocations = [...new Set(accidentDataset.map((r) => r.location))];
 
 export default function Dataset() {
   const [searchQuery, setSearchQuery] = useState("");
   const [peakFilter, setPeakFilter] = useState<string>("all");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   const filteredData = useMemo(() => {
@@ -33,15 +38,22 @@ export default function Dataset() {
         record.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
         record.date.includes(searchQuery);
       const matchesPeak = peakFilter === "all" || record.peakHour === peakFilter;
-      return matchesSearch && matchesPeak;
+      const matchesLocation = locationFilter === "all" || record.location === locationFilter;
+      return matchesSearch && matchesPeak && matchesLocation;
     });
-  }, [searchQuery, peakFilter]);
+  }, [searchQuery, peakFilter, locationFilter]);
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
   const paginatedData = filteredData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  // Get location risk info
+  const getLocationRisk = (locationName: string) => {
+    const loc = locations.find((l) => l.name === locationName);
+    return loc?.baseRisk || "medium";
+  };
 
   const getSeverityVariant = (severity: AccidentRecord["severity"]) => {
     switch (severity) {
@@ -115,6 +127,34 @@ export default function Dataset() {
                 <SelectItem value="Off-Peak">Off-Peak</SelectItem>
               </SelectContent>
             </Select>
+            <Select
+              value={locationFilter}
+              onValueChange={(value) => {
+                setLocationFilter(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full md:w-[220px]">
+                <SelectValue placeholder="Filter by Location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {datasetLocations.map((loc) => (
+                  <SelectItem key={loc} value={loc}>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn("h-2 w-2 rounded-full", {
+                          "bg-danger": getLocationRisk(loc) === "high",
+                          "bg-warning": getLocationRisk(loc) === "medium",
+                          "bg-success": getLocationRisk(loc) === "low",
+                        })}
+                      />
+                      <span className="truncate max-w-[150px]">{loc}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -125,7 +165,8 @@ export default function Dataset() {
               <TableRow className="bg-muted/50">
                 <TableHead className="font-semibold">Date</TableHead>
                 <TableHead className="font-semibold">Time</TableHead>
-                <TableHead className="font-semibold">Location</TableHead>
+              <TableHead className="font-semibold">Location</TableHead>
+                <TableHead className="font-semibold">Risk</TableHead>
                 <TableHead className="font-semibold text-center">Accidents</TableHead>
                 <TableHead className="font-semibold">Peak Hour</TableHead>
                 <TableHead className="font-semibold">Severity</TableHead>
@@ -133,33 +174,60 @@ export default function Dataset() {
             </TableHeader>
             <TableBody>
               {paginatedData.length > 0 ? (
-                paginatedData.map((record) => (
-                  <TableRow key={record.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-medium">{record.date}</TableCell>
-                    <TableCell>{record.time}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {record.location}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                        {record.accidentCount}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getPeakHourVariant(record.peakHour)}>
-                        {record.peakHour}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getSeverityVariant(record.severity)}>
-                        {record.severity}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
+                paginatedData.map((record) => {
+                  const locationRisk = getLocationRisk(record.location);
+                  return (
+                    <TableRow key={record.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-medium">{record.date}</TableCell>
+                      <TableCell>{record.time}</TableCell>
+                      <TableCell className="max-w-[200px]">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="truncate">{record.location}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium",
+                            {
+                              "bg-danger/10 text-danger": locationRisk === "high",
+                              "bg-warning/10 text-warning": locationRisk === "medium",
+                              "bg-success/10 text-success": locationRisk === "low",
+                            }
+                          )}
+                        >
+                          <span
+                            className={cn("h-1.5 w-1.5 rounded-full", {
+                              "bg-danger": locationRisk === "high",
+                              "bg-warning": locationRisk === "medium",
+                              "bg-success": locationRisk === "low",
+                            })}
+                          />
+                          {locationRisk.charAt(0).toUpperCase() + locationRisk.slice(1)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                          {record.accidentCount}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getPeakHourVariant(record.peakHour)}>
+                          {record.peakHour}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getSeverityVariant(record.severity)}>
+                          {record.severity}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No records found matching your criteria.
                   </TableCell>
                 </TableRow>

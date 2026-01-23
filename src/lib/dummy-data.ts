@@ -84,37 +84,100 @@ export const highRiskTimeSlots = [
   { time: "7:00 AM - 8:00 AM", risk: "medium" as const, avgAccidents: 12 },
 ];
 
-// Prediction simulation
-export function simulatePrediction(date: string, time: string): {
+// Location data with risk profiles
+export interface LocationData {
+  id: string;
+  name: string;
+  riskMultiplier: number;
+  baseRisk: "low" | "medium" | "high";
+  historicalAccidents: number;
+  description: string;
+}
+
+export const locations: LocationData[] = [
+  { id: "highway-101-a", name: "Highway 101 - Junction A", riskMultiplier: 1.5, baseRisk: "high", historicalAccidents: 45, description: "High-speed highway junction" },
+  { id: "highway-101-b", name: "Highway 101 - Junction B", riskMultiplier: 1.4, baseRisk: "high", historicalAccidents: 42, description: "Major highway interchange" },
+  { id: "main-street", name: "Main Street Intersection", riskMultiplier: 1.2, baseRisk: "medium", historicalAccidents: 28, description: "Central city intersection" },
+  { id: "cbd", name: "Central Business District", riskMultiplier: 1.3, baseRisk: "high", historicalAccidents: 38, description: "High traffic commercial zone" },
+  { id: "industrial-zone", name: "Industrial Zone Road", riskMultiplier: 0.8, baseRisk: "low", historicalAccidents: 12, description: "Industrial area with truck traffic" },
+  { id: "school-zone-west", name: "School Zone - West", riskMultiplier: 1.1, baseRisk: "medium", historicalAccidents: 22, description: "School area with pedestrian crossings" },
+  { id: "shopping-mall", name: "Shopping Mall Exit", riskMultiplier: 1.4, baseRisk: "high", historicalAccidents: 40, description: "High congestion shopping area" },
+  { id: "railway-crossing", name: "Railway Crossing North", riskMultiplier: 0.9, baseRisk: "low", historicalAccidents: 15, description: "Controlled railway crossing" },
+  { id: "hospital-road", name: "Hospital Road", riskMultiplier: 1.0, baseRisk: "medium", historicalAccidents: 20, description: "Hospital access road" },
+  { id: "tech-park", name: "Tech Park Entrance", riskMultiplier: 1.2, baseRisk: "medium", historicalAccidents: 25, description: "IT corridor entrance" },
+  { id: "university-gate", name: "University Gate", riskMultiplier: 1.0, baseRisk: "medium", historicalAccidents: 18, description: "University main entrance" },
+  { id: "stadium-road", name: "Stadium Road", riskMultiplier: 1.5, baseRisk: "high", historicalAccidents: 48, description: "Event venue access road" },
+  { id: "airport-expressway", name: "Airport Expressway", riskMultiplier: 1.3, baseRisk: "medium", historicalAccidents: 30, description: "Airport access expressway" },
+  { id: "market-junction", name: "Market Area Junction", riskMultiplier: 1.2, baseRisk: "medium", historicalAccidents: 26, description: "Busy market intersection" },
+  { id: "residential-c", name: "Residential Zone C", riskMultiplier: 0.6, baseRisk: "low", historicalAccidents: 8, description: "Residential neighborhood" },
+  { id: "bus-terminal", name: "Bus Terminal Exit", riskMultiplier: 1.3, baseRisk: "high", historicalAccidents: 35, description: "Public transport hub" },
+  { id: "office-complex", name: "Office Complex Road", riskMultiplier: 1.1, baseRisk: "medium", historicalAccidents: 24, description: "Corporate office area" },
+  { id: "park-avenue", name: "Park Avenue", riskMultiplier: 0.7, baseRisk: "low", historicalAccidents: 10, description: "Park adjacent road" },
+  { id: "metro-station", name: "Metro Station Area", riskMultiplier: 1.0, baseRisk: "medium", historicalAccidents: 19, description: "Metro station vicinity" },
+  { id: "entertainment-district", name: "Entertainment District", riskMultiplier: 1.4, baseRisk: "high", historicalAccidents: 44, description: "Nightlife and entertainment zone" },
+];
+
+// Prediction simulation with location
+export function simulatePrediction(date: string, time: string, locationId?: string): {
   predictedCount: number;
   riskLevel: "low" | "medium" | "high";
   confidence: number;
+  location?: LocationData;
+  factors: string[];
 } {
   const hour = parseInt(time.split(":")[0]);
   const isWeekend = new Date(date).getDay() === 0 || new Date(date).getDay() === 6;
+  const location = locationId ? locations.find(l => l.id === locationId) : undefined;
+  const riskMultiplier = location?.riskMultiplier || 1;
   
   let baseCount = 2;
   let riskLevel: "low" | "medium" | "high" = "low";
+  const factors: string[] = [];
   
   // Morning peak (7-9 AM)
   if (hour >= 7 && hour <= 9 && !isWeekend) {
-    baseCount = Math.floor(Math.random() * 8) + 15;
-    riskLevel = baseCount > 20 ? "high" : "medium";
+    baseCount = Math.floor((Math.random() * 8 + 15) * riskMultiplier);
+    factors.push("Morning rush hour traffic");
   }
   // Evening peak (5-7 PM)
   else if (hour >= 17 && hour <= 19 && !isWeekend) {
-    baseCount = Math.floor(Math.random() * 10) + 18;
-    riskLevel = baseCount > 22 ? "high" : "medium";
+    baseCount = Math.floor((Math.random() * 10 + 18) * riskMultiplier);
+    factors.push("Evening rush hour traffic");
   }
   // Off-peak
   else {
-    baseCount = Math.floor(Math.random() * 5) + 3;
-    riskLevel = baseCount > 6 ? "medium" : "low";
+    baseCount = Math.floor((Math.random() * 5 + 3) * riskMultiplier);
+    factors.push("Off-peak traffic conditions");
+  }
+  
+  // Weekend factor
+  if (isWeekend) {
+    baseCount = Math.floor(baseCount * 0.7);
+    factors.push("Weekend - reduced traffic");
+  }
+  
+  // Location-based factors
+  if (location) {
+    factors.push(`Location: ${location.description}`);
+    if (location.baseRisk === "high") {
+      factors.push("High-risk zone historically");
+    }
+  }
+  
+  // Determine risk level based on count
+  if (baseCount > 20) {
+    riskLevel = "high";
+  } else if (baseCount > 10) {
+    riskLevel = "medium";
+  } else {
+    riskLevel = "low";
   }
   
   return {
     predictedCount: baseCount,
     riskLevel,
     confidence: Math.floor(Math.random() * 10) + 85,
+    location,
+    factors,
   };
 }
