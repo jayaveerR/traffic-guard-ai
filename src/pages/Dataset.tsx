@@ -17,9 +17,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronLeft, ChevronRight, Database, MapPin } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Database, MapPin, AlertTriangle, Clock } from "lucide-react";
 import { accidentDataset, AccidentRecord, locations } from "@/lib/dummy-data";
 import { cn } from "@/lib/utils";
+import { usePrediction } from "@/context/PredictionContext";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -27,10 +28,28 @@ const ITEMS_PER_PAGE = 8;
 const datasetLocations = [...new Set(accidentDataset.map((r) => r.location))];
 
 export default function Dataset() {
+  const { latestPrediction } = usePrediction();
   const [searchQuery, setSearchQuery] = useState("");
   const [peakFilter, setPeakFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Get time period from prediction time
+  const getTimePeriod = (time: string): "Morning" | "Evening" | "Off-Peak" => {
+    const hour = parseInt(time.split(":")[0]);
+    if (hour >= 7 && hour < 10) return "Morning";
+    if (hour >= 17 && hour < 20) return "Evening";
+    return "Off-Peak";
+  };
+
+  // Get severity from risk level
+  const getSeverityFromRisk = (risk: "low" | "medium" | "high"): "Minor" | "Moderate" | "Severe" => {
+    switch (risk) {
+      case "low": return "Minor";
+      case "medium": return "Moderate";
+      case "high": return "Severe";
+    }
+  };
 
   const filteredData = useMemo(() => {
     return accidentDataset.filter((record) => {
@@ -94,6 +113,56 @@ export default function Dataset() {
             </div>
           </div>
         </div>
+
+        {/* Latest Prediction Card */}
+        {latestPrediction && (
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl border border-primary/20 p-5 mb-6 shadow-card">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">Latest Prediction Added</h2>
+              <Badge variant="outline" className="ml-auto">New</Badge>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Location</p>
+                <p className="font-medium text-sm truncate">{latestPrediction.location?.name || "Custom Location"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Date & Time</p>
+                <p className="font-medium text-sm">{latestPrediction.date} at {latestPrediction.time}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Predicted Accidents</p>
+                <p className="font-bold text-lg text-primary">{latestPrediction.predictedCount}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Risk Level</p>
+                <span className={cn(
+                  "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium",
+                  {
+                    "bg-danger/10 text-danger": latestPrediction.riskLevel === "high",
+                    "bg-warning/10 text-warning": latestPrediction.riskLevel === "medium",
+                    "bg-success/10 text-success": latestPrediction.riskLevel === "low",
+                  }
+                )}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full", {
+                    "bg-danger": latestPrediction.riskLevel === "high",
+                    "bg-warning": latestPrediction.riskLevel === "medium",
+                    "bg-success": latestPrediction.riskLevel === "low",
+                  })} />
+                  {latestPrediction.riskLevel.charAt(0).toUpperCase() + latestPrediction.riskLevel.slice(1)}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Peak Hour</p>
+                <Badge variant="secondary">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {getTimePeriod(latestPrediction.time)}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-card rounded-xl border border-border p-4 mb-6 shadow-card">
