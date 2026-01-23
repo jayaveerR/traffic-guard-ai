@@ -16,10 +16,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RiskBadge } from "@/components/ui/risk-badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LocationSearch } from "@/components/LocationSearch";
 import { Brain, CalendarIcon, Clock, AlertTriangle, Shield, TrendingUp, MapPin, Info } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { simulatePrediction, locations, LocationData } from "@/lib/dummy-data";
+import { simulatePrediction, LocationData } from "@/lib/dummy-data";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const timeSlots = [
@@ -37,7 +38,7 @@ const safetyMessages = {
 export default function Prediction() {
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState<string>();
-  const [locationId, setLocationId] = useState<string>();
+  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [prediction, setPrediction] = useState<{
     predictedCount: number;
@@ -48,7 +49,7 @@ export default function Prediction() {
   } | null>(null);
 
   const handlePredict = async () => {
-    if (!date || !time || !locationId) return;
+    if (!date || !time || !selectedLocation) return;
 
     setIsLoading(true);
     setPrediction(null);
@@ -56,7 +57,7 @@ export default function Prediction() {
     // Simulate API call delay
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const result = simulatePrediction(format(date, "yyyy-MM-dd"), time, locationId);
+    const result = simulatePrediction(format(date, "yyyy-MM-dd"), time, selectedLocation.id);
     setPrediction(result);
     setIsLoading(false);
   };
@@ -85,21 +86,37 @@ export default function Prediction() {
             Accident Risk Prediction
           </h1>
           <p className="text-muted-foreground max-w-lg mx-auto">
-            Select a date and time to predict traffic accident risk using our
-            AI-powered forecasting model.
+            Search for a location and select date/time to predict traffic accident risk.
           </p>
         </div>
 
-        {/* Prediction Form */}
+        {/* Location Search Card */}
+        <Card className="mb-6 shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-accent" />
+              Search Location
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <LocationSearch
+              selectedLocation={selectedLocation}
+              onLocationSelect={setSelectedLocation}
+              onClear={() => setSelectedLocation(null)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Date & Time Card */}
         <Card className="mb-8 shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-accent" />
-              Select Prediction Parameters
+              Select Date & Time
             </CardTitle>
           </CardHeader>
 <CardContent>
-            <div className="grid sm:grid-cols-3 gap-4 mb-6">
+            <div className="grid sm:grid-cols-2 gap-4 mb-6">
               {/* Date Picker */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Select Date</label>
@@ -144,53 +161,11 @@ export default function Prediction() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Location Selector */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select Location</label>
-                <Select value={locationId} onValueChange={setLocationId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select area/location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map((loc) => (
-                      <SelectItem key={loc.id} value={loc.id}>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn("h-2 w-2 rounded-full", {
-                              "bg-danger": loc.baseRisk === "high",
-                              "bg-warning": loc.baseRisk === "medium",
-                              "bg-success": loc.baseRisk === "low",
-                            })}
-                          />
-                          {loc.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
-
-            {/* Selected Location Info */}
-            {locationId && (
-              <div className="bg-muted/50 rounded-lg p-3 mb-4 flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm">
-                    {locations.find((l) => l.id === locationId)?.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {locations.find((l) => l.id === locationId)?.description} •{" "}
-                    Historical accidents: {locations.find((l) => l.id === locationId)?.historicalAccidents}
-                  </p>
-                </div>
-              </div>
-            )}
 
             <Button
               onClick={handlePredict}
-              disabled={!date || !time || !locationId || isLoading}
+              disabled={!date || !time || !selectedLocation || isLoading}
               className="w-full gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
               size="lg"
             >
