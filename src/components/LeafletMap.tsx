@@ -102,11 +102,21 @@ export function LeafletMap({
         .addTo(mapInstanceRef.current);
 
       if (locationName) {
-        markerRef.current.bindPopup(`<strong>${locationName}</strong>`).openPopup();
+        markerRef.current.bindPopup(`<strong>${locationName}</strong>`, {
+          closeOnClick: false,
+          autoClose: false,
+        }).openPopup();
       }
 
       // Pan to marker
       mapInstanceRef.current.setView(markerPosition, zoom);
+
+      // Keep popup open after zoom events
+      mapInstanceRef.current.on('zoomend', () => {
+        if (markerRef.current && locationName) {
+          markerRef.current.openPopup();
+        }
+      });
     }
   }, [markerPosition, markerColor, locationName, zoom]);
 

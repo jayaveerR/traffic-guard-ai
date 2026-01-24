@@ -268,8 +268,8 @@ export function LocationSearch({
               locationName={selectedLocation.name}
               zoom={14}
             />
-            {/* Location Info Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-gradient-to-t from-background/95 via-background/80 to-transparent p-4">
+            {/* Location Info Overlay - Always visible */}
+            <div className="absolute bottom-0 left-0 right-0 z-[2000] bg-gradient-to-t from-background via-background/95 to-transparent p-4 pointer-events-none">
               <div className="flex items-center gap-3">
                 <div
                   className={cn(
