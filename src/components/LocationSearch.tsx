@@ -261,15 +261,17 @@ export function LocationSearch({
       <div className="relative rounded-lg overflow-hidden border border-border bg-muted/30 h-[280px]">
         {selectedLocation ? (
           <>
-            <LeafletMap
-              center={selectedLocation.coordinates || [16.5062, 80.6480]}
-              markerPosition={selectedLocation.coordinates || [16.5062, 80.6480]}
-              markerColor={selectedLocation.baseRisk}
-              locationName={selectedLocation.name}
-              zoom={14}
-            />
-            {/* Location Info Overlay - Always visible */}
-            <div className="absolute bottom-0 left-0 right-0 z-[2000] bg-gradient-to-t from-background via-background/95 to-transparent p-4 pointer-events-none">
+            <div className="absolute inset-0 z-0">
+              <LeafletMap
+                center={selectedLocation.coordinates || [16.5062, 80.6480]}
+                markerPosition={selectedLocation.coordinates || [16.5062, 80.6480]}
+                markerColor={selectedLocation.baseRisk}
+                locationName={selectedLocation.name}
+                zoom={14}
+              />
+            </div>
+            {/* Location Info Overlay - Always visible on top */}
+            <div className="absolute bottom-0 left-0 right-0 z-[9999] bg-gradient-to-t from-background via-background/95 to-transparent p-4" style={{ pointerEvents: 'none' }}>
               <div className="flex items-center gap-3">
                 <div
                   className={cn(
@@ -318,10 +320,12 @@ export function LocationSearch({
             </div>
           </>
         ) : (
-          <LeafletMap
-            center={[16.5062, 80.6480]}
-            zoom={11}
-          />
+          <div className="absolute inset-0 z-0">
+            <LeafletMap
+              center={[16.5062, 80.6480]}
+              zoom={11}
+            />
+          </div>
         )}
       </div>
     </div>

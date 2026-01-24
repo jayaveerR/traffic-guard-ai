@@ -124,7 +124,7 @@ export function LeafletMap({
     <div 
       ref={mapRef} 
       className={cn("w-full h-full rounded-lg", className)}
-      style={{ minHeight: "200px" }}
+      style={{ minHeight: "200px", zIndex: 0 }}
     />
   );
 }
