@@ -19,55 +19,65 @@ export function DailyAlertBanner() {
   const [isLoading, setIsLoading] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
 
-  useEffect(() => {
-    const fetchAlert = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/daily-alert`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          if (errorData.fallbackAlert) {
-            setAlertData({ 
-              alert: errorData.fallbackAlert, 
-              date: new Date().toLocaleDateString(), 
-              day: new Date().toLocaleDateString('en-US', { weekday: 'long' })
-            });
-            setIsVisible(true);
-          }
-          return;
+  const fetchAlert = async (isInitial = false) => {
+    try {
+      if (isInitial) setIsLoading(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/daily-alert`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
         }
+      );
 
-        const data = await response.json();
-        setAlertData(data);
-        
-        // Delay showing for smooth animation
-        setTimeout(() => setIsVisible(true), 500);
-      } catch (error) {
-        console.error("Failed to fetch daily alert:", error);
-        // Show fallback alert
-        const now = new Date();
-        setAlertData({
-          alert: `⚠️ ${now.toLocaleDateString('en-US', { weekday: 'long' })}: Stay alert on Indian roads. Peak hour traffic requires extra caution.`,
-          date: now.toLocaleDateString(),
-          day: now.toLocaleDateString('en-US', { weekday: 'long' })
-        });
-        setTimeout(() => setIsVisible(true), 500);
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.fallbackAlert) {
+          setAlertData({ 
+            alert: errorData.fallbackAlert, 
+            date: new Date().toLocaleDateString(), 
+            day: new Date().toLocaleDateString('en-US', { weekday: 'long' })
+          });
+          if (isInitial) setIsVisible(true);
+        }
+        return;
       }
-    };
 
-    fetchAlert();
+      const data = await response.json();
+      setAlertData(data);
+      
+      if (isInitial) {
+        setTimeout(() => setIsVisible(true), 500);
+      }
+    } catch (error) {
+      console.error("Failed to fetch daily alert:", error);
+      const now = new Date();
+      setAlertData({
+        alert: `⚠️ ${now.toLocaleDateString('en-US', { weekday: 'long' })}: Stay alert on Indian roads. Peak hour traffic requires extra caution.`,
+        date: now.toLocaleDateString(),
+        day: now.toLocaleDateString('en-US', { weekday: 'long' })
+      });
+      if (isInitial) setTimeout(() => setIsVisible(true), 500);
+    } finally {
+      if (isInitial) setIsLoading(false);
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchAlert(true);
+  }, []);
+
+  // Auto-refresh every 2 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchAlert(false);
+    }, 2 * 60 * 1000); // 2 minutes
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleClose = () => {
