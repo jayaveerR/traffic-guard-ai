@@ -41,8 +41,14 @@ export function LeafletMap({
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Initialize map
-    mapInstanceRef.current = L.map(mapRef.current).setView(center, zoom);
+    // Initialize map with disabled scroll zoom and single-touch drag
+    mapInstanceRef.current = L.map(mapRef.current, {
+      scrollWheelZoom: false,
+      dragging: false,
+      touchZoom: true,
+      doubleClickZoom: true,
+      tap: false,
+    }).setView(center, zoom);
 
     // Add OpenStreetMap tiles
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
