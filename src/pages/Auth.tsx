@@ -215,17 +215,6 @@ export default function Auth() {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
-                
-                <p className="text-center text-sm text-muted-foreground">
-                  Don't have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("signup")}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    Sign up
-                  </button>
-                </p>
               </form>
             </TabsContent>
             
