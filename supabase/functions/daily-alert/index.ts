@@ -5,25 +5,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// State-wise accident data for AI analysis
-const statesData = [
-  { state: "Maharashtra", accidents: 145, riskLevel: "high" },
-  { state: "Tamil Nadu", accidents: 132, riskLevel: "high" },
-  { state: "Uttar Pradesh", accidents: 128, riskLevel: "high" },
-  { state: "Karnataka", accidents: 115, riskLevel: "medium" },
-  { state: "Rajasthan", accidents: 108, riskLevel: "medium" },
-  { state: "Gujarat", accidents: 98, riskLevel: "medium" },
-  { state: "Madhya Pradesh", accidents: 94, riskLevel: "medium" },
-  { state: "Andhra Pradesh", accidents: 89, riskLevel: "medium" },
-  { state: "West Bengal", accidents: 85, riskLevel: "medium" },
-  { state: "Kerala", accidents: 78, riskLevel: "low" },
-  { state: "Telangana", accidents: 76, riskLevel: "low" },
-  { state: "Punjab", accidents: 72, riskLevel: "low" },
-  { state: "Bihar", accidents: 68, riskLevel: "low" },
-  { state: "Haryana", accidents: 65, riskLevel: "low" },
-  { state: "Odisha", accidents: 58, riskLevel: "low" },
-  { state: "Delhi", accidents: 62, riskLevel: "low" },
+// State-wise base accident data - will be dynamically modified based on date
+const statesBaseData = [
+  { state: "Maharashtra", baseAccidents: 145 },
+  { state: "Tamil Nadu", baseAccidents: 132 },
+  { state: "Uttar Pradesh", baseAccidents: 128 },
+  { state: "Karnataka", baseAccidents: 115 },
+  { state: "Rajasthan", baseAccidents: 108 },
+  { state: "Gujarat", baseAccidents: 98 },
+  { state: "Madhya Pradesh", baseAccidents: 94 },
+  { state: "Andhra Pradesh", baseAccidents: 89 },
+  { state: "West Bengal", baseAccidents: 85 },
+  { state: "Kerala", baseAccidents: 78 },
+  { state: "Telangana", baseAccidents: 76 },
+  { state: "Punjab", baseAccidents: 72 },
+  { state: "Bihar", baseAccidents: 68 },
+  { state: "Haryana", baseAccidents: 65 },
+  { state: "Odisha", baseAccidents: 58 },
+  { state: "Delhi", baseAccidents: 62 },
+  { state: "Jharkhand", baseAccidents: 55 },
+  { state: "Chhattisgarh", baseAccidents: 52 },
+  { state: "Assam", baseAccidents: 48 },
+  { state: "Uttarakhand", baseAccidents: 42 },
 ];
+
+// Generate a seeded random number based on date for consistent daily variation
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -42,14 +52,31 @@ serve(async (req) => {
     const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' });
     const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     
-    // Add daily variation to accident data
-    const dayVariation = now.getDay() * 0.05 + 0.9; // 0.9 to 1.2 multiplier
-    const hourVariation = now.getHours() >= 8 && now.getHours() <= 10 || now.getHours() >= 17 && now.getHours() <= 19 ? 1.3 : 1.0;
+    // Create a unique seed for each day (changes daily)
+    const dateSeed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
     
-    const todayData = statesData.map(s => ({
-      ...s,
-      accidents: Math.round(s.accidents * dayVariation * hourVariation * (0.9 + Math.random() * 0.2))
-    }));
+    // Peak hour detection (8-10 AM and 5-7 PM)
+    const hourVariation = (now.getHours() >= 8 && now.getHours() <= 10) || 
+                          (now.getHours() >= 17 && now.getHours() <= 19) ? 1.3 : 1.0;
+    
+    // Generate dynamic accident data that changes each day
+    const todayData = statesBaseData.map((s, index) => {
+      // Each state gets a unique but consistent random factor for today
+      const stateSeed = dateSeed + index * 7;
+      const dailyFactor = 0.5 + seededRandom(stateSeed) * 1.0; // 0.5 to 1.5 multiplier
+      
+      // Add day-of-week variation (weekends higher in some states)
+      const weekendBoost = (now.getDay() === 0 || now.getDay() === 6) ? 
+        (seededRandom(stateSeed + 1) > 0.5 ? 1.2 : 0.9) : 1.0;
+      
+      // Calculate today's accidents with all factors
+      const accidents = Math.round(
+        s.baseAccidents * dailyFactor * weekendBoost * hourVariation * 
+        (0.95 + seededRandom(stateSeed + 2) * 0.1) // Small additional randomness
+      );
+      
+      return { state: s.state, accidents };
+    });
 
     const totalAccidents = todayData.reduce((sum, s) => sum + s.accidents, 0);
     const sortedStates = [...todayData].sort((a, b) => b.accidents - a.accidents);
