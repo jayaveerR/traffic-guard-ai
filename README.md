@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+﻿# Welcome to your Lovable project
 
 ## Project info
 
@@ -71,3 +71,17 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+
+## Developer Guide: Setting up Environment & CSV
+
+Since this project handles sensitive data and large files, certain files (.env, .csv) are not uploaded to GitHub directly.
+
+However, for easy setup, we have compressed them into a single zip file included in this repository.
+
+### Quick Setup for Developers:
+1. Please **[Download dataset_and_env.zip](./dataset_and_env.zip)** located in this project folder.
+2. Extract the contents.
+3. Place the extracted .env file and 	raffic_accidents1.csv file directly inside your local ackend/ folder.
+4. Run frontend (
+pm run dev) and backend app (python app.py). Everything will work magically!
