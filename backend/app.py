@@ -203,10 +203,10 @@ def predict():
                     "location":        data.get("location", "Unknown Area"),
                     "search_date":     data.get("date"),
                     "search_time":     data.get("time"),
-                    "predicted_count": response["predictedCount"],
+                    "predicted_count": int(round(response["predictedCount"])),
                     "risk_level":      response["riskLevel"],
-                    "confidence":      response["confidence"],
-                    "factors":         factor_list,
+                    "confidence":      int(round(response["confidence"])),
+                    # Removed factors as it is not in the db schema and causing PGRST204
                 }
 
                 # Insert safely via Direct REST API to avoid httpx threading crashes in Supabase Python wrapper
