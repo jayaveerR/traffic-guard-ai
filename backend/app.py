@@ -84,11 +84,11 @@ try:
     if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
         max_frequency = joblib.load("max_frequency.joblib")
-        print("✅ Model Loaded!")
+        print("Model Loaded!")
     else:
         model = None
         max_frequency = 100
-        print("❌ Model not found")
+        print("Model not found")
 
     if os.path.exists(CSV_PATH):
         global_df = pd.read_csv(CSV_PATH)
@@ -96,12 +96,14 @@ try:
         for col in ["weather_condition", "lighting_condition", "trafficway_type", "alignment", "roadway_surface_condition", "road_defect"]:
              if col in global_df.columns:
                  feature_modes[col] = global_df[col].mode()[0]
-        print("✅ Data Loaded & Modes Calculated")
+        print("Data Loaded & Modes Calculated")
         print("Defaults:", feature_modes)
     else:
-        print("❌ CSV Not Found")
+        print("CSV Not Found")
 except Exception as e:
-    print(f"❌ Error loading resources: {e}")
+    model = None
+    max_frequency = 100
+    print(f"Error loading resources: {e}")
 
 # ===== Helper: Convert time to hour and day/week/month features =====
 def extract_time_features(date_str, time_str):
