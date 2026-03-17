@@ -37,7 +37,7 @@ export function DailyAlertBanner() {
 
   const fetchStateAlerts = async () => {
     try {
-      const res = await fetch("http://localhost:5000/state-alerts");
+      const res = await fetch("http://127.0.0.1:5000/state-alerts");
       if (!res.ok) throw new Error("bad response");
       const data: StateAlertsResponse = await res.json();
       setTop5(data.top5_states);

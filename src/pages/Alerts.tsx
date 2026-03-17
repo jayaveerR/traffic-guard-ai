@@ -93,7 +93,7 @@ export default function Alerts() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await fetch("http://localhost:5000/alerts");
+            const res = await fetch("http://127.0.0.1:5000/alerts");
             if (!res.ok) throw new Error(`Server returned ${res.status}`);
             const json = await res.json();
             setData(json);
