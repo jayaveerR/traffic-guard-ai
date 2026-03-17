@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { MapPin, TrendingUp, Activity, ChevronLeft, ChevronRight, Calendar, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/config";
 
 // Interfaces for new fetched data
 interface StateAlert {
@@ -35,7 +36,7 @@ export default function About() {
 
     const fetchStates = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:5000/state-alerts");
+        const res = await fetch(`${API_BASE_URL}/state-alerts`);
         if (res.ok && isMounted) {
           const stateData = await res.json();
           setStatesData(stateData.all_states || []);
@@ -47,7 +48,7 @@ export default function About() {
 
     const fetchAlerts = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:5000/alerts");
+        const res = await fetch(`${API_BASE_URL}/alerts`);
         if (res.ok && isMounted) {
           const alertData = await res.json();
           if (alertData.alerts && alertData.alerts.length > 0) {

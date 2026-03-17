@@ -25,6 +25,7 @@ import {
     ResponsiveContainer,
     ReferenceLine,
 } from "recharts";
+import { API_BASE_URL } from "@/config";
 
 interface AlertEntry {
     hour: number;
@@ -93,7 +94,7 @@ export default function Alerts() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await fetch("http://127.0.0.1:5000/alerts");
+            const res = await fetch(`${API_BASE_URL}/alerts`);
             if (!res.ok) throw new Error(`Server returned ${res.status}`);
             const json = await res.json();
             setData(json);

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { LocationData } from "@/types";
+import { API_BASE_URL } from "@/config";
 
 export interface PredictionData {
   predictedCount: number;
@@ -41,7 +42,7 @@ export function PredictionProvider({ children }: { children: ReactNode }) {
 
   const fetchHistory = async (token: string) => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/history", {
+      const response = await fetch(`${API_BASE_URL}/history`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

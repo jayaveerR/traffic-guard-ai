@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AlertTriangle, X, Sparkles, Clock, TrendingUp, ArrowRight, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from "@/config";
 
 interface StateAlert {
   rank: number;
@@ -37,7 +38,7 @@ export function DailyAlertBanner() {
 
   const fetchStateAlerts = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:5000/state-alerts");
+      const res = await fetch(`${API_BASE_URL}/state-alerts`);
       if (!res.ok) throw new Error("bad response");
       const data: StateAlertsResponse = await res.json();
       setTop5(data.top5_states);
