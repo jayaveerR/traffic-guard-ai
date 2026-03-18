@@ -81,6 +81,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "model.joblib")
 CSV_PATH = os.path.join(BASE_DIR, "traffic_accidents1.csv")
 FREQ_PATH = os.path.join(BASE_DIR, "max_frequency.joblib")
+startup_error = None
+
 
 try:
     if os.path.exists(MODEL_PATH):
@@ -105,6 +107,7 @@ try:
 except Exception as e:
     model = None
     max_frequency = 100
+    startup_error = str(e)
     print(f"Error loading resources: {e}")
 
 # ===== Helper: Convert time to hour and day/week/month features =====
@@ -136,7 +139,7 @@ def get_risk_level(predicted_value):
 def predict():
     try:
         if model is None:
-            return jsonify({"error": "Model not loaded"}), 500
+            return jsonify({"error": "Model not loaded", "startup_error": startup_error}), 500
 
         data = request.json
         features = {}
@@ -438,7 +441,7 @@ def get_state_alerts():
     """
     try:
         if model is None:
-            return jsonify({"error": "Model not loaded"}), 500
+            return jsonify({"error": "Model not loaded", "startup_error": startup_error}), 500
 
         now         = datetime.now()
         today_dow   = now.weekday()    # 0=Mon … 6=Sun (real today)
