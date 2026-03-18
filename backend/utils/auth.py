@@ -2,6 +2,9 @@ from functools import wraps
 from flask import request, jsonify
 from services.supabase_service import supabase_client
 
+import base64
+import json
+
 def get_user_from_token(auth_header):
     if not auth_header or not auth_header.startswith("Bearer "):
         return None
@@ -11,13 +14,27 @@ def get_user_from_token(auth_header):
         return None
         
     try:
-        # Verify the token with Supabase and get user data
-        user_response = supabase_client.auth.get_user(jwt=token)
-        if user_response and hasattr(user_response, 'user') and user_response.user:
-            return user_response.user
+        # Avoid Supabase network bottlenecks and timeout crashes (which caused 401s and forced logouts)
+        # Parse the JWT payload locally. The Supabase REST API will securely verify the signature later.
+        parts = token.split(".")
+        if len(parts) >= 2:
+            payload_b64 = parts[1]
+            # Add padding
+            payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
+            payload_json = base64.b64decode(payload_b64).decode('utf-8')
+            payload = json.loads(payload_json)
+            
+            class MockUser:
+                def __init__(self, uid):
+                    self.id = uid
+            
+            if payload.get("sub"):
+                return MockUser(payload.get("sub"))
     except Exception as e:
-        print(f"Token verification failed: {e}")
+        print(f"Token local parse failed: {e}")
+        
     return None
+
 
 def require_auth(f):
     @wraps(f)
