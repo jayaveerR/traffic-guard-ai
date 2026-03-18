@@ -77,13 +77,15 @@ def add_features(X):
 # ===== Load Data & Model =====
 global_df = None
 feature_modes = {}
-MODEL_PATH = "model.joblib"
-CSV_PATH = "traffic_accidents1.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "model.joblib")
+CSV_PATH = os.path.join(BASE_DIR, "traffic_accidents1.csv")
+FREQ_PATH = os.path.join(BASE_DIR, "max_frequency.joblib")
 
 try:
     if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
-        max_frequency = joblib.load("max_frequency.joblib")
+        max_frequency = joblib.load(FREQ_PATH)
         print("Model Loaded!")
     else:
         model = None
