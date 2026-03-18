@@ -74,6 +74,11 @@ def add_features(X):
     X['is_weekend'] = X['crash_day_of_week'].apply(lambda x: 1 if x >= 6 else 0)
     return X
 
+# Patch __main__ so that joblib can find add_features when running in gunicorn
+import __main__
+if not hasattr(__main__, 'add_features'):
+    __main__.add_features = add_features
+
 # ===== Load Data & Model =====
 global_df = None
 feature_modes = {}
